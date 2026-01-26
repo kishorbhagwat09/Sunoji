@@ -1,112 +1,111 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, Image, StyleSheet } from "react-native";
+import { useEffect, useState } from "react";
+import { usePlayer } from "../_context/PlayerContext";
 
-import { Collapsible } from '@/components/ui/collapsible';
-import { ExternalLink } from '@/components/external-link';
-import ParallaxScrollView from '@/components/parallax-scroll-view';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { IconSymbol } from '@/components/ui/icon-symbol';
-import { Fonts } from '@/constants/theme';
+type Song = {
+  title: string;
+  artist: string;
+  url: string;
+  cover: string;
+};
 
-export default function TabTwoScreen() {
+export default function ExploreScreen() {
+  const [songs, setSongs] = useState<Song[]>([]);
+  const [loading, setLoading] = useState(true);
+  const { playSong } = usePlayer();
+
+  useEffect(() => {
+    fetch("https://kishorbhagwat.in/Sunoji/api/songs.php")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.status === "success") {
+          setSongs(data.songs);
+        }
+      })
+      .catch((err) => console.log("Fetch error", err))
+      .finally(() => setLoading(false));
+  }, []);
+
+  if (loading) {
+    return (
+      <View style={styles.center}>
+        <Text style={{ color: "#aaa" }}>Loading songs...</Text>
+      </View>
+    );
+  }
+
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#D0D0D0', dark: '#353636' }}
-      headerImage={
-        <IconSymbol
-          size={310}
-          color="#808080"
-          name="chevron.left.forwardslash.chevron.right"
-          style={styles.headerImage}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText
-          type="title"
-          style={{
-            fontFamily: Fonts.rounded,
-          }}>
-          Explore
-        </ThemedText>
-      </ThemedView>
-      <ThemedText>This app includes example code to help you get started.</ThemedText>
-      <Collapsible title="File-based routing">
-        <ThemedText>
-          This app has two screens:{' '}
-          <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> and{' '}
-          <ThemedText type="defaultSemiBold">app/(tabs)/explore.tsx</ThemedText>
-        </ThemedText>
-        <ThemedText>
-          The layout file in <ThemedText type="defaultSemiBold">app/(tabs)/_layout.tsx</ThemedText>{' '}
-          sets up the tab navigator.
-        </ThemedText>
-        <ExternalLink href="https://docs.expo.dev/router/introduction">
-          <ThemedText type="link">Learn more</ThemedText>
-        </ExternalLink>
-      </Collapsible>
-      <Collapsible title="Android, iOS, and web support">
-        <ThemedText>
-          You can open this project on Android, iOS, and the web. To open the web version, press{' '}
-          <ThemedText type="defaultSemiBold">w</ThemedText> in the terminal running this project.
-        </ThemedText>
-      </Collapsible>
-      <Collapsible title="Images">
-        <ThemedText>
-          For static images, you can use the <ThemedText type="defaultSemiBold">@2x</ThemedText> and{' '}
-          <ThemedText type="defaultSemiBold">@3x</ThemedText> suffixes to provide files for
-          different screen densities
-        </ThemedText>
-        <Image
-          source={require('@/assets/images/react-logo.png')}
-          style={{ width: 100, height: 100, alignSelf: 'center' }}
-        />
-        <ExternalLink href="https://reactnative.dev/docs/images">
-          <ThemedText type="link">Learn more</ThemedText>
-        </ExternalLink>
-      </Collapsible>
-      <Collapsible title="Light and dark mode components">
-        <ThemedText>
-          This template has light and dark mode support. The{' '}
-          <ThemedText type="defaultSemiBold">useColorScheme()</ThemedText> hook lets you inspect
-          what the user&apos;s current color scheme is, and so you can adjust UI colors accordingly.
-        </ThemedText>
-        <ExternalLink href="https://docs.expo.dev/develop/user-interface/color-themes/">
-          <ThemedText type="link">Learn more</ThemedText>
-        </ExternalLink>
-      </Collapsible>
-      <Collapsible title="Animations">
-        <ThemedText>
-          This template includes an example of an animated component. The{' '}
-          <ThemedText type="defaultSemiBold">components/HelloWave.tsx</ThemedText> component uses
-          the powerful{' '}
-          <ThemedText type="defaultSemiBold" style={{ fontFamily: Fonts.mono }}>
-            react-native-reanimated
-          </ThemedText>{' '}
-          library to create a waving hand animation.
-        </ThemedText>
-        {Platform.select({
-          ios: (
-            <ThemedText>
-              The <ThemedText type="defaultSemiBold">components/ParallaxScrollView.tsx</ThemedText>{' '}
-              component provides a parallax effect for the header image.
-            </ThemedText>
-          ),
-        })}
-      </Collapsible>
-    </ParallaxScrollView>
+    <View style={styles.container}>
+      <Text style={styles.heading}>Playlist 🎧</Text>
+
+      <FlatList
+        data={songs}
+        keyExtractor={(item, index) => index.toString()}
+        renderItem={({ item }) => (
+          <TouchableOpacity
+            style={styles.card}
+            onPress={() => playSong(item, songs)} // 🔥 VERY IMPORTANT
+          >
+            <Image source={{ uri: item.cover }} style={styles.cover} />
+
+            <View style={{ flex: 1 }}>
+              <Text style={styles.title}>{item.title}</Text>
+              <Text style={styles.artist}>{item.artist}</Text>
+            </View>
+
+            <Text style={styles.play}>▶</Text>
+          </TouchableOpacity>
+        )}
+      />
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  headerImage: {
-    color: '#808080',
-    bottom: -90,
-    left: -35,
-    position: 'absolute',
+  container: {
+    flex: 1,
+    backgroundColor: "#0B0F1A",
+    padding: 16,
   },
-  titleContainer: {
-    flexDirection: 'row',
-    gap: 8,
+  heading: {
+    color: "#fff",
+    fontSize: 22,
+    fontWeight: "700",
+    marginBottom: 16,
+  },
+  card: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#141A2E",
+    borderRadius: 14,
+    padding: 12,
+    marginBottom: 12,
+  },
+  cover: {
+    width: 55,
+    height: 55,
+    borderRadius: 8,
+    marginRight: 12,
+  },
+  title: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  artist: {
+    color: "#9CA3AF",
+    fontSize: 13,
+    marginTop: 2,
+  },
+  play: {
+    color: "#6C8CFF",
+    fontSize: 22,
+    marginLeft: 10,
+  },
+  center: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#0B0F1A",
   },
 });
