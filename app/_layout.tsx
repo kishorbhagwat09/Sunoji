@@ -1,7 +1,7 @@
 import { Slot, usePathname } from "expo-router";
-import { PlayerProvider } from "./_context/PlayerContext";
-import MiniPlayer from "./components/MiniPlayer";
 import { View } from "react-native";
+import MiniPlayer from "./components/MiniPlayer";
+import { PlayerProvider } from "./context/PlayerContext";
 
 export default function RootLayout() {
   const pathname = usePathname();

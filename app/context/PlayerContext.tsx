@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useRef, useState } from "react";
 import { Audio } from "expo-av";
 
-const PlayerContext = createContext<any>(null);
+export const PlayerContext = createContext<any>(null);
 
 export function PlayerProvider({ children }: any) {
   const soundRef = useRef<Audio.Sound | null>(null);
@@ -14,6 +14,26 @@ export function PlayerProvider({ children }: any) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [position, setPosition] = useState(0);
   const [duration, setDuration] = useState(1);
+  const [repeatMode, setRepeatMode] = useState<'off' | 'one' | 'all'>('off'); // off, one (ek baar), all
+  const [likedSongs, setLikedSongs] = useState<Set<string>>(new Set());
+
+  const loadLikedSongsFromDB = async () => {
+    try {
+      const res = await fetch(
+        "https://kishorbhagwat.in/Sunoji/api/likes/get.php"
+      );
+      const json = await res.json();
+
+      if (json.status === "success") {
+        const ids = new Set<string>(
+          json.data.map((song: any) => song.id.toString())
+        );
+        setLikedSongs(ids);
+      }
+    } catch (e) {
+      console.log("Failed to load liked songs", e);
+    }
+  };
 
   useEffect(() => {
     Audio.setAudioModeAsync({
@@ -21,6 +41,7 @@ export function PlayerProvider({ children }: any) {
       playsInSilentModeIOS: true,
       shouldDuckAndroid: true,
     });
+    loadLikedSongsFromDB();
   }, []);
 
   const playlistRef = useRef<any[]>([]);
@@ -106,6 +127,55 @@ export function PlayerProvider({ children }: any) {
     }
   };
 
+  // 💚 Like/Unlike functionality
+  const toggleLike = async (songId: string) => {
+    const newLikedSongs = new Set(likedSongs);
+    if (newLikedSongs.has(songId)) {
+      newLikedSongs.delete(songId);
+      // Database se remove karo
+      try {
+        await fetch('https://kishorbhagwat.in/Sunoji/api/likes/remove.php', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ song_id: songId }),
+        });
+      } catch (error) {
+        console.error('Error removing like:', error);
+      }
+    } else {
+      newLikedSongs.add(songId);
+      // Database me add karo
+      try {
+        await fetch('https://kishorbhagwat.in/Sunoji/api/likes/add.php', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ song_id: songId }),
+        });
+      } catch (error) {
+        console.error('Error adding like:', error);
+      }
+    }
+    setLikedSongs(newLikedSongs);
+  };
+
+  // 🔁 Repeat functionality
+  const toggleRepeat = () => {
+    const nextMode = repeatMode === 'off' ? 'all' : repeatMode === 'all' ? 'one' : 'off';
+    setRepeatMode(nextMode);
+  };
+
+  // Song repeat logic
+  useEffect(() => {
+    if (repeatMode === 'one' && songFinishedRef.current) {
+      // Ek hi song dobara chalaao
+      if (soundRef.current && currentSong) {
+        soundRef.current.setPositionAsync(0);
+        soundRef.current.playAsync();
+        songFinishedRef.current = false;
+      }
+    }
+  }, [repeatMode, currentSong]);
+
   return (
     <PlayerContext.Provider
       value={{
@@ -118,6 +188,10 @@ export function PlayerProvider({ children }: any) {
         position,
         duration,
         seekTo,
+        repeatMode,
+        toggleRepeat,
+        toggleLike,
+        likedSongs,
       }}
     >
       {children}

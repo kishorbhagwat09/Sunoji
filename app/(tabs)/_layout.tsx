@@ -36,13 +36,24 @@ export default function TabsLayout() {
         }}
       />
 
-      {/* PLAYLIST ✅ */}
+      {/* 🔥 SUNOJI REMIX */}
       <Tabs.Screen
-        name="playlist"
+        name="Sunoji Remix"
         options={{
-          title: "Playlist",
+          title: "Sunoji Remix",
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="musical-notes" size={size} color={color} />
+          ),
+        }}
+      />
+
+      {/* 📚 LIBRARY */}
+      <Tabs.Screen
+        name="Library"
+        options={{
+          title: "Library",
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="library" size={size} color={color} />
           ),
         }}
       />
