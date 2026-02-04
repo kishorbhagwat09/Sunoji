@@ -1,6 +1,13 @@
 import { MaterialIcons, FontAwesome5 } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import { Image, StyleSheet, Text, TouchableOpacity, View, Animated } from "react-native";
+import {
+  Image,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+  Animated,
+} from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { usePlayer } from "../context/PlayerContext";
 import { useEffect, useRef } from "react";
@@ -14,6 +21,8 @@ export default function MiniPlayer() {
     playNext,
     toggleLike,
     likedSongs,
+    position,   // ✅ from context
+    duration,   // ✅ from context
   } = usePlayer();
 
   const pulseAnim = useRef(new Animated.Value(1)).current;
@@ -43,6 +52,10 @@ export default function MiniPlayer() {
 
   const isLiked = likedSongs.has(String(currentSong.id));
 
+  /* 🔥 REAL PROGRESS FIX */
+  const progressPercent =
+    duration > 0 ? (position / duration) * 100 : 0;
+
   return (
     <TouchableOpacity
       style={styles.container}
@@ -56,8 +69,8 @@ export default function MiniPlayer() {
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
       />
-      
-      {/* Animated Visualizer Line */}
+
+      {/* Visualizer */}
       {isPlaying && (
         <View style={styles.visualizerContainer}>
           {[...Array(8)].map((_, i) => (
@@ -66,9 +79,9 @@ export default function MiniPlayer() {
               style={[
                 styles.visualizerBar,
                 {
-                  height: isPlaying ? Math.random() * 12 + 4 : 4,
+                  height: Math.random() * 12 + 4,
                   backgroundColor: i % 2 === 0 ? "#6C8CFF" : "#4C6FFF",
-                }
+                },
               ]}
             />
           ))}
@@ -76,18 +89,16 @@ export default function MiniPlayer() {
       )}
 
       <View style={styles.content}>
-        {/* Album Cover with Rotation Animation */}
+        {/* Cover */}
         <Animated.View style={{ transform: [{ scale: pulseAnim }] }}>
           <Image
-  source={{ uri: currentSong.cover }}
-  style={styles.cover}
-/>
-
-          {/* Playing Indicator Dot */}
+            source={{ uri: currentSong.cover }}
+            style={styles.cover}
+          />
           {isPlaying && <View style={styles.playingIndicator} />}
         </Animated.View>
 
-        {/* Song Info */}
+        {/* Info */}
         <View style={styles.infoContainer}>
           <Text numberOfLines={1} style={styles.title}>
             {currentSong.title}
@@ -100,70 +111,66 @@ export default function MiniPlayer() {
           </View>
         </View>
 
-        {/* Controls Container */}
+        {/* Controls */}
         <View style={styles.controlsContainer}>
-          {/* Like Button */}
           <TouchableOpacity
             onPress={(e) => {
               e.stopPropagation();
               toggleLike(String(currentSong.id));
             }}
             style={[styles.iconButton, styles.likeButton]}
-            activeOpacity={0.7}
           >
             <MaterialIcons
               name={isLiked ? "favorite" : "favorite-outline"}
               size={22}
               color={isLiked ? "#FF3B5C" : "#8B9CB6"}
             />
-            {isLiked && <View style={styles.likedPulse} />}
           </TouchableOpacity>
 
-          {/* Play/Pause Button */}
           <TouchableOpacity
             onPress={(e) => {
               e.stopPropagation();
               togglePlayPause();
             }}
             style={styles.playButton}
-            activeOpacity={0.8}
           >
             <LinearGradient
-              colors={isPlaying ? ["#FF6B6B", "#FF8E53"] : ["#6C8CFF", "#4C6FFF"]}
+              colors={
+                isPlaying
+                  ? ["#FF6B6B", "#FF8E53"]
+                  : ["#6C8CFF", "#4C6FFF"]
+              }
               style={styles.playButtonGradient}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
             >
               <MaterialIcons
                 name={isPlaying ? "pause" : "play-arrow"}
                 size={24}
-                color="#FFFFFF"
+                color="#fff"
               />
             </LinearGradient>
           </TouchableOpacity>
 
-          {/* Next Button */}
           <TouchableOpacity
             onPress={(e) => {
               e.stopPropagation();
               playNext();
             }}
             style={[styles.iconButton, styles.nextButton]}
-            activeOpacity={0.7}
           >
             <MaterialIcons name="skip-next" size={24} color="#6C8CFF" />
           </TouchableOpacity>
         </View>
       </View>
 
-      {/* Progress Bar */}
+      {/* ✅ REAL PROGRESS BAR */}
       <View style={styles.progressContainer}>
         <View style={styles.progressBar}>
           <LinearGradient
             colors={["#6C8CFF", "#4C6FFF"]}
-            style={[styles.progressFill, { width: "30%" }]} // Replace with actual progress
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 0 }}
+            style={[
+              styles.progressFill,
+              { width: `${progressPercent}%` },
+            ]}
           />
         </View>
       </View>

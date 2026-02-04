@@ -54,7 +54,6 @@ export default function ExploreScreen() {
         if (data.status === "success") {
           const songsWithId = data.songs.map((song: Song, index: number) => ({
             ...song,
-            id: String(index + 1),
             duration: Math.floor(Math.random() * 300) + 120,
             genre: ["Pop", "Hip Hop", "Rock", "Electronic", "R&B", "Jazz"][Math.floor(Math.random() * 6)]
           }));
